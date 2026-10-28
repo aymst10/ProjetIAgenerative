@@ -1,0 +1,12 @@
+.git
+.venv
+venv
+data
+artifacts
+mlruns
+**/__pycache__
+**/*.pyc
+.env
+.pytest_cache
+.mypy_cache
+*.db
