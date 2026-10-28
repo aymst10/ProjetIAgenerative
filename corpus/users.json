@@ -1,0 +1,37 @@
+{
+  "note": "Comptes fictifs de démonstration. Groupes utilisés pour le contrôle d'accès.",
+  "users": [
+    {
+      "user_id": "alice",
+      "display_name": "Alice Martin",
+      "password": "alice-demo",
+      "groups": [
+        "pompes"
+      ]
+    },
+    {
+      "user_id": "bob",
+      "display_name": "Bob Visiteur",
+      "password": "bob-demo",
+      "groups": [
+        "visiteur"
+      ]
+    },
+    {
+      "user_id": "carol",
+      "display_name": "Carol Bernard",
+      "password": "carol-demo",
+      "groups": [
+        "compresseurs"
+      ]
+    },
+    {
+      "user_id": "diana",
+      "display_name": "Diana Responsable",
+      "password": "diana-demo",
+      "groups": [
+        "responsables"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Figure 2.1 Schéma du panneau POMPE-A. Le voyant orange est câblé sur la sonde de température d'huile.
