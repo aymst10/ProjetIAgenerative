@@ -1,0 +1,1 @@
+"""Paquet MCP de démonstration."""
