@@ -1,0 +1,24 @@
+{
+  "weights": [
+    1.628253,
+    2.826972,
+    1.470078,
+    -0.439725,
+    -5.332379
+  ],
+  "features": [
+    "overlap",
+    "bm25",
+    "equipment",
+    "typed",
+    "bias"
+  ],
+  "train_examples": 1470,
+  "positives": 70,
+  "holdout_documents": [
+    "fiche_comp_b_seuils",
+    "graissage_pompes",
+    "manuel_comp_a",
+    "note_atelier_pompes"
+  ]
+}

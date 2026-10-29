@@ -15,6 +15,10 @@ STOPWORDS = {
 }
 TOKEN = re.compile(r"[a-z0-9àâäéèêëïîôùûüç]+", re.IGNORECASE)
 NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+VALUE = re.compile(
+    r"\d+(?:[.,]\d+)?(?=\s*(?:heures|heure|bar|mm|litres|litre|ml|c\b|%))",
+    re.IGNORECASE,
+)
 INJECTION_MARKERS = (
     "ignore les instructions",
     "ignore previous",
@@ -67,12 +71,14 @@ def contradictory_hits(hits: list[Hit]) -> list[Hit]:
     conflicts: list[Hit] = []
     for left_index, left in enumerate(usable):
         left_words = set(content_words(NUMBER.sub(" ", left.text)))
-        left_numbers = set(NUMBER.findall(left.text))
+        left_numbers = set(VALUE.findall(left.text))
         if not left_numbers:
             continue
         for right in usable[left_index + 1 :]:
+            if not (set(left.equipment_ids) & set(right.equipment_ids)):
+                continue
             right_words = set(content_words(NUMBER.sub(" ", right.text)))
-            right_numbers = set(NUMBER.findall(right.text))
+            right_numbers = set(VALUE.findall(right.text))
             if not right_numbers or left_numbers == right_numbers:
                 continue
             union = left_words | right_words

@@ -86,6 +86,7 @@ def search_corpus(
     top_k: int = 5,
     user_id: str = "",
     index: LocalIndex | None = None,
+    reranker_mode: str | None = None,
 ) -> SearchOutcome:
     equipment = equipment_by_id(equipment_id)
     if not has_corpus_access(user_groups) or not equipment_allowed(equipment, user_groups):
@@ -114,12 +115,21 @@ def search_corpus(
             score *= 1.25
         boosted.append((row, score))
     boosted.sort(key=lambda pair: pair[1], reverse=True)
-    hits = [
+    pool = [
         Hit.from_element(index.elements[row], score)
-        for row, score in boosted[:top_k]
+        for row, score in boosted[:20]
         if intersects(index.elements[row].allowed_groups, user_groups)
     ]
-    return SearchOutcome(hits=filter_visible(hits, user_groups), access_denied=False)
+    from maintidoc.rerank.apply import rerank_hits
+
+    pool = rerank_hits(
+        query,
+        pool,
+        reranker_mode or settings.reranker_mode,
+        equipment_id,
+        settings,
+    )
+    return SearchOutcome(hits=filter_visible(pool[:top_k], user_groups), access_denied=False)
 
 
 def read_document(document_id: str, user_groups: list[str], user_id: str = "") -> bytes:

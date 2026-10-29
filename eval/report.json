@@ -1,0 +1,30 @@
+{
+  "scenarios": 150,
+  "retrieval": {
+    "none": {
+      "n": 62,
+      "ndcg_at_5": 0.7975,
+      "mrr_at_10": 0.8451,
+      "recall_at_5": 0.9355
+    },
+    "original": {
+      "n": 62,
+      "ndcg_at_5": 0.8226,
+      "mrr_at_10": 0.8898,
+      "recall_at_5": 0.9677
+    },
+    "adapted": {
+      "n": 62,
+      "ndcg_at_5": 0.9028,
+      "mrr_at_10": 0.9562,
+      "recall_at_5": 0.9677
+    }
+  },
+  "workflow": {
+    "checked": 90,
+    "failures": 0,
+    "leaks": 0,
+    "unapproved_creates": 0,
+    "examples": []
+  }
+}

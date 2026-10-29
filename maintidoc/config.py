@@ -88,7 +88,7 @@ class Settings:
             vlm_model=os.environ.get("VLM_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct"),
             index_version=os.environ.get("INDEX_VERSION", "idx-synth-v1"),
             reranker_mode=os.environ.get("RERANKER_MODE", "original"),
-            reranker_weights=os.environ.get("RERANKER_WEIGHTS", "artifacts/reranker_adapted.json"),
+            reranker_weights=os.environ.get("RERANKER_WEIGHTS", "models/reranker_adapted.json"),
             user_daily_quota=_env_int("USER_DAILY_QUOTA", 30),
             max_mcp_calls=_env_int("MAX_MCP_CALLS", 3),
             max_model_calls=_env_int("MAX_MODEL_CALLS", 6),
