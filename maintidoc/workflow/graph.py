@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 from typing import TypedDict
 
@@ -21,6 +22,7 @@ from maintidoc.mcp.tokens import approval_token, read_approval, session_token
 from maintidoc.retrieval.search import Hit, search_corpus
 from maintidoc.schemas import AssistantOutput, ProposedAction, RunEnvelope, ToolTrace
 from maintidoc.versions import load_prompts, version_info
+from maintidoc.tracking import log_run
 
 
 class GraphState(TypedDict, total=False):
@@ -378,8 +380,11 @@ def run_question(
         "tool_results": [],
         **budget.as_state(),
     }
+    started = time.perf_counter()
     result = get_app().invoke(state, _config(run_id))
-    return _envelope(result, run_id)
+    envelope = _envelope(result, run_id)
+    log_run(envelope, time.perf_counter() - started)
+    return envelope
 
 
 def submit_decision(
@@ -402,8 +407,11 @@ def submit_decision(
     if text_changed:
         approved = False
     app.update_state(config, {"approved": approved, **budget.as_state()})
+    started = time.perf_counter()
     result = app.invoke(None, config)
-    return _envelope(result, run_id)
+    envelope = _envelope(result, run_id)
+    log_run(envelope, time.perf_counter() - started)
+    return envelope
 
 
 def pending(run_id: str) -> bool:

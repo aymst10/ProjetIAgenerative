@@ -47,3 +47,8 @@ Aucun autre équipement n’est couvert. Une ressemblance visuelle ne suffit pas
 - Le repli sans GPU ne « voit » qu’une teinte dominante et une netteté approximative, pas le détail d’un schéma.
 - Les tests d’injection couvrent le cas représentatif du cahier et des variantes du jeu d’évaluation, pas toutes les attaques possibles.
 - Les mesures d’évaluation décrivent ce jeu synthétique. Elles ne se généralisent pas à un site industriel.
+
+## Résultats observés
+
+`eval/report.json` décrit le jeu de 150 scénarios. Sur la partie retrieval, le nDCG@5 passe de 0,80 sans reranker à 0,82 avec le BM25 d'origine, puis à 0,90 avec le reranker adapté. Le rappel@5 adapté est 0,97. Sur 90 contrôles d'incertitude, d'accès, d'outils et d'injection, le script n'a relevé ni fuite ni création de ticket non approuvée. Ce n'est pas une garantie hors de ce corpus fictif.
+

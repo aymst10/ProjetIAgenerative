@@ -24,3 +24,28 @@ Copier `.env.example` vers `.env`. Ne jamais versionner `.env`. Aucun secret de 
 ## Mode local
 
 Sans GPU, le prototype répond à partir des extraits récupérés (générateur déterministe). Les poids Qwen2.5-VL et BGE-M3 ne sont pas téléchargés par défaut (`USE_VLM=0`, `USE_HEAVY_MODELS=0`).
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt -r requirements-dev.txt
+copy .env.example .env
+python scripts/ingest.py
+python -m pytest
+python scripts/api_server.py
+```
+
+Dans un second terminal :
+
+```powershell
+python scripts/ui.py
+```
+
+L'interface est sur http://localhost:8501 et l'API sur http://localhost:8000. Comptes fictifs : `alice` / `alice-demo` (pompes), `bob` / `bob-demo` (accès refusé), `carol` / `carol-demo` (compresseurs), `diana` / `diana-demo` (les deux familles).
+
+Le serveur d'outils seul : `python scripts/mcp_server.py` (port 8001). La comparaison des rerankers : `python scripts/evaluate.py`. Le rapport synthétique est `eval/report.json`.
+
+## Docker Compose
+
+`docker compose up --build` démarre l'API, l'interface, Qdrant, PostgreSQL, MinIO, le serveur MCP et MLflow. Les mots de passe de ce fichier sont des secrets de démonstration. L'interface reste sur le port 8501. En local, sans ces services, `STORAGE_BACKEND=local` suffit.
+
