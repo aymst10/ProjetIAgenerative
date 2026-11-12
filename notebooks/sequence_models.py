@@ -2,7 +2,7 @@
 
 Le cours « Architecture Transformer » compare trois mémoires sur le même
 découpage : dix valeurs de sin(x) pour prédire la suivante. Ce module
-couvre le RNN, puis le LSTM. Aucun fichier de modèle n'est téléchargé.
+couvre le RNN, le LSTM, puis un petit encodeur Transformer. Aucun fichier de modèle n'est téléchargé.
 """
 
 from __future__ import annotations
@@ -51,6 +51,33 @@ class SimpleLSTM(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         etats, _etats_finaux = self.lstm(x)
         return self.sortie(etats[:, -1, :])
+
+
+class MiniTransformer(nn.Module):
+    """Encodeur à une couche : projection, positions apprises, attention, dernière position."""
+
+    def __init__(self, longueur_max: int = 10) -> None:
+        super().__init__()
+        dimension = 16
+        self.projection = nn.Linear(1, dimension)
+        self.positions = nn.Embedding(longueur_max, dimension)
+        couche = nn.TransformerEncoderLayer(
+            d_model=dimension,
+            nhead=2,
+            dim_feedforward=32,
+            dropout=0.0,
+            batch_first=True,
+        )
+        self.encodeur = nn.TransformerEncoder(couche, num_layers=1)
+        self.sortie = nn.Linear(dimension, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        longueur = x.size(1)
+        projete = self.projection(x)
+        indices = torch.arange(longueur, device=projete.device)
+        projete = projete + self.positions(indices).unsqueeze(0)
+        representations = self.encodeur(projete)
+        return self.sortie(representations[:, -1, :])
 
 
 def train_and_eval(
