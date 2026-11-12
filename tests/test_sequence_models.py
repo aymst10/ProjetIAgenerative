@@ -2,7 +2,15 @@
 
 import torch
 
-from notebooks.sequence_models import MiniTransformer, SimpleLSTM, SimpleRNN, make_windows, train_and_eval
+from notebooks.sequence_models import (
+    MiniTransformer,
+    SimpleLSTM,
+    SimpleRNN,
+    make_windows,
+    prolonger_phrase,
+    proposer_masque,
+    train_and_eval,
+)
 
 
 def test_windows_follow_the_course_split():
@@ -62,3 +70,15 @@ def test_transformer_loss_drops_on_cpu():
     assert resultat["predictions"].shape == y_test.shape
     assert resultat["history"][-1] < resultat["history"][0]
     assert resultat["test_loss"] < 0.2
+
+
+def test_causal_decoder_continues_the_example_without_download():
+    texte = prolonger_phrase(epochs=300)
+    assert texte.startswith("Artificial intelligence can help")
+    assert texte.endswith("people")
+
+
+def test_bidirectional_mask_recovers_the_toy_word():
+    propositions = proposer_masque(epochs=400)
+    assert propositions[0][0] == "capitale"
+    assert propositions[0][1] > 0.5

@@ -2,7 +2,9 @@
 
 Le cours « Architecture Transformer » compare trois mémoires sur le même
 découpage : dix valeurs de sin(x) pour prédire la suivante. Ce module
-couvre le RNN, le LSTM, puis un petit encodeur Transformer. Aucun fichier de modèle n'est téléchargé.
+couvre le RNN, le LSTM, un petit encodeur, puis deux modèles de texte
+minuscules (décodeur causal et masque bidirectionnel). GPT-2 et BERT
+ne sont pas téléchargés.
 """
 
 from __future__ import annotations
@@ -118,3 +120,126 @@ def train_and_eval(
         "predictions": predictions,
         "y_test": y_test,
     }
+
+
+class _MiniCausal(nn.Module):
+    """Une couche d'attention causale : une position ne voit pas les caractères futurs."""
+
+    def __init__(self, vocabulaire: int, longueur: int) -> None:
+        super().__init__()
+        self.emb = nn.Embedding(vocabulaire, 32)
+        self.pos = nn.Embedding(longueur, 32)
+        couche = nn.TransformerEncoderLayer(
+            d_model=32,
+            nhead=4,
+            dim_feedforward=64,
+            dropout=0.0,
+            batch_first=True,
+        )
+        self.encodeur = nn.TransformerEncoder(couche, num_layers=1, enable_nested_tensor=False)
+        self.tete = nn.Linear(32, vocabulaire)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        longueur = x.size(1)
+        positions = torch.arange(longueur, device=x.device)
+        cache = self.emb(x) + self.pos(positions)
+        masque = torch.triu(torch.ones(longueur, longueur, dtype=torch.bool, device=x.device), diagonal=1)
+        return self.tete(self.encodeur(cache, mask=masque))
+
+
+def prolonger_phrase(epochs: int = 300, seed: int = 42) -> str:
+    """Apprend une seule phrase anglaise et en prolonge l'amorce. Ce n'est pas GPT-2."""
+    torch.manual_seed(seed)
+    texte = "Artificial intelligence can help people"
+    amorce = "Artificial intelligence can help"
+    caracteres = sorted(set(texte))
+    indice_de = {caractere: indice for indice, caractere in enumerate(caracteres)}
+    caractere_de = {indice: caractere for caractere, indice in indice_de.items()}
+    donnees = torch.tensor([indice_de[caractere] for caractere in texte], dtype=torch.long)
+    modele = _MiniCausal(len(caracteres), len(donnees))
+    optimiseur = torch.optim.Adam(modele.parameters(), lr=0.05)
+    critere = nn.CrossEntropyLoss()
+    entrees = donnees[:-1].unsqueeze(0)
+    cibles = donnees[1:].unsqueeze(0)
+    modele.train()
+    for _ in range(epochs):
+        optimiseur.zero_grad()
+        logits = modele(entrees)
+        perte = critere(logits.reshape(-1, logits.size(-1)), cibles.reshape(-1))
+        perte.backward()
+        optimiseur.step()
+    contexte = [indice_de[caractere] for caractere in amorce]
+    modele.eval()
+    with torch.no_grad():
+        for _ in range(len(texte) - len(amorce)):
+            fenetre = contexte[-(len(donnees) - 1) :]
+            entree = torch.tensor(fenetre, dtype=torch.long).unsqueeze(0)
+            logits = modele(entree)
+            contexte.append(int(logits[0, -1].argmax()))
+    return "".join(caractere_de[indice] for indice in contexte)
+
+
+class _MiniMasque(nn.Module):
+    """Encodeur sans masque causal : le trou voit le contexte des deux côtés."""
+
+    def __init__(self, taille_vocabulaire: int, longueur: int) -> None:
+        super().__init__()
+        self.identifiant_masque = taille_vocabulaire
+        self.emb = nn.Embedding(taille_vocabulaire + 1, 32)
+        self.pos = nn.Embedding(longueur, 32)
+        couche = nn.TransformerEncoderLayer(
+            d_model=32,
+            nhead=4,
+            dim_feedforward=64,
+            dropout=0.0,
+            batch_first=True,
+        )
+        self.encodeur = nn.TransformerEncoder(couche, num_layers=1, enable_nested_tensor=False)
+        self.tete = nn.Linear(32, taille_vocabulaire)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        longueur = x.size(1)
+        positions = torch.arange(longueur, device=x.device)
+        return self.tete(self.encodeur(self.emb(x) + self.pos(positions)))
+
+
+def proposer_masque(epochs: int = 400, seed: int = 42) -> list[tuple[str, float]]:
+    """Retrouve un mot masqué sur trois phrases. Ce n'est pas BERT multilingue."""
+    torch.manual_seed(seed)
+    phrases = [
+        "Paris est la capitale de la France".split(),
+        "Rome est la capitale de l Italie".split(),
+        "Madrid est la capitale de l Espagne".split(),
+    ]
+    vocabulaire = sorted({mot for phrase in phrases for mot in phrase})
+    indice_de = {mot: indice for indice, mot in enumerate(vocabulaire)}
+    mot_de = {indice: mot for mot, indice in indice_de.items()}
+    identifiant_cible = indice_de["capitale"]
+    longueur_max = max(len(phrase) for phrase in phrases)
+    modele = _MiniMasque(len(vocabulaire), longueur_max)
+    optimiseur = torch.optim.Adam(modele.parameters(), lr=0.05)
+    critere = nn.CrossEntropyLoss()
+    modele.train()
+    for _ in range(epochs):
+        optimiseur.zero_grad()
+        pertes = []
+        for phrase in phrases:
+            identifiants = [indice_de[mot] for mot in phrase]
+            position = phrase.index("capitale")
+            identifiants[position] = modele.identifiant_masque
+            entree = torch.tensor(identifiants, dtype=torch.long).unsqueeze(0)
+            logits = modele(entree)
+            cible = torch.tensor([identifiant_cible])
+            pertes.append(critere(logits[0, position].unsqueeze(0), cible))
+        torch.stack(pertes).mean().backward()
+        optimiseur.step()
+    phrase = phrases[0]
+    position_masque = phrase.index("capitale")
+    identifiants = [indice_de[mot] for mot in phrase]
+    identifiants[position_masque] = modele.identifiant_masque
+    entree = torch.tensor(identifiants, dtype=torch.long).unsqueeze(0)
+    modele.eval()
+    with torch.no_grad():
+        probabilites = torch.softmax(modele(entree)[0, position_masque], dim=-1)
+        top_probabilites, top_indices = torch.topk(probabilites, k=5)
+    return [(mot_de[int(indice)], float(proba)) for proba, indice in zip(top_probabilites, top_indices)]

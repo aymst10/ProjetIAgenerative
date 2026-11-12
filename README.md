@@ -45,6 +45,10 @@ L'interface est sur http://localhost:8501 et l'API sur http://localhost:8000. Co
 
 Le serveur d'outils seul : `python scripts/mcp_server.py` (port 8001). La comparaison des rerankers : `python scripts/evaluate.py`. Le rapport synthétique est `eval/report.json`.
 
+## Cours : architecture Transformer
+
+Le notebook `notebooks/architecture_transformer.ipynb` reprend le cours sur CPU : RNN, LSTM, encodeur à attention, puis un décodeur causal et un masque bidirectionnel entraînés sur quelques phrases. Ce n'est pas GPT-2 ni BERT : leurs poids ne sont pas téléchargés. PyTorch n'est pas requis pour l'assistant (`USE_VLM=0`).
+
 ## Docker Compose
 
 `docker compose up --build` démarre l'API, l'interface, Qdrant, PostgreSQL, MinIO, le serveur MCP et MLflow. Les mots de passe de ce fichier sont des secrets de démonstration. L'interface reste sur le port 8501. En local, sans ces services, `STORAGE_BACKEND=local` suffit.
