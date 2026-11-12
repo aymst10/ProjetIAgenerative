@@ -2,7 +2,7 @@
 
 Le cours « Architecture Transformer » compare trois mémoires sur le même
 découpage : dix valeurs de sin(x) pour prédire la suivante. Ce module
-commence par le RNN. Aucun fichier de modèle n'est téléchargé.
+couvre le RNN, puis le LSTM. Aucun fichier de modèle n'est téléchargé.
 """
 
 from __future__ import annotations
@@ -37,6 +37,19 @@ class SimpleRNN(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         etats, _ = self.rnn(x)
+        return self.sortie(etats[:, -1, :])
+
+
+class SimpleLSTM(nn.Module):
+    """Mémoire à portes : état caché et état de cellule, lus au dernier pas."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.lstm = nn.LSTM(input_size=1, hidden_size=16, num_layers=1, batch_first=True)
+        self.sortie = nn.Linear(16, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        etats, _etats_finaux = self.lstm(x)
         return self.sortie(etats[:, -1, :])
 
 
